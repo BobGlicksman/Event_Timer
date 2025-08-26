@@ -22,11 +22,11 @@
 #include <LocalTimeRK.h>
 
 #define VERSION "1.0"
- // Pinout Definitions for the RFID PCB
- #define ADMIT_LED D19
- #define REJECT_LED D18
- #define BUZZER D2
- #define READY_LED D4
+// Pinout Definitions for the RFID PCB
+#define ADMIT_LED D19
+#define REJECT_LED D18
+#define BUZZER D2
+#define READY_LED D4
 
 // pinout on LCD [RS, EN, D4, D5, D6, D7];
 LiquidCrystal lcd(D11, D12, D13, D14, D5, D6);
@@ -55,54 +55,52 @@ int simulateSensor(String sensorNum) {
 }   // end of simulatedSensor()
 
 void setup() {
-  Particle.variable("version", VERSION);  // make the version available to the Console
+    Particle.variable("version", VERSION);  // make the version available to the Console
 
-  pinMode(ADMIT_LED, OUTPUT);
-  pinMode(REJECT_LED, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-  pinMode(READY_LED, OUTPUT);
+    pinMode(ADMIT_LED, OUTPUT); 
+    pinMode(REJECT_LED, OUTPUT);
+    pinMode(BUZZER, OUTPUT);
+    pinMode(READY_LED, OUTPUT);
 
-  digitalWrite(ADMIT_LED, LOW);
-  digitalWrite(REJECT_LED, LOW);
-  digitalWrite(BUZZER, LOW);
-  digitalWrite(READY_LED, LOW);
+    digitalWrite(ADMIT_LED, LOW);  
+    digitalWrite(REJECT_LED, LOW);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(READY_LED, LOW);
 
-  // set up the LCD's number of columns and rows and clear the display
-  lcd.begin(16,2);
-  lcd.clear();
-  lcd.setCursor(0,0);
-  // set up the local time (Pacific Time)
-  LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
+    // set up the LCD's number of columns and rows and clear the display
+    lcd.begin(16,2);
+    lcd.clear();
+    lcd.setCursor(0,0);
+    // set up the local time (Pacific Time)
+    LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
 
     // Daily at 9:30pm device message 13
-  MNScheduleManager.getScheduleByName("13")
-    .withTime(LocalTimeHMSRestricted(
-        LocalTimeHMS("21:30:00"),
-        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-    ));
+    MNScheduleManager.getScheduleByName("13")
+        .withTime(LocalTimeHMSRestricted(
+            LocalTimeHMS("21:30:00"),
+            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+        ));
 
     // Daily at 9:45 device message 14
     MNScheduleManager.getScheduleByName("14")
-    .withTime(LocalTimeHMSRestricted(
-        LocalTimeHMS("21:45:00"),
-        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-    ));
+        .withTime(LocalTimeHMSRestricted(
+            LocalTimeHMS("21:45:00"),
+            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+        ));
 
-   // Daily at 9:55 device message 17
+    // Daily at 9:55 device message 17
     MNScheduleManager.getScheduleByName("17")
-    .withTime(LocalTimeHMSRestricted(
-        LocalTimeHMS("21:55:00"),
-        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-    ));
+        .withTime(LocalTimeHMSRestricted(
+            LocalTimeHMS("21:55:00"),
+            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+        ));
 
     // Daily at 10:00 device message 15
     MNScheduleManager.getScheduleByName("15")
-    .withTime(LocalTimeHMSRestricted(
-        LocalTimeHMS("22:03:00"),
-        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-    ));
-
-
+        .withTime(LocalTimeHMSRestricted(
+            LocalTimeHMS("22:03:00"),
+            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+        ));
 
 } // end of setup()
 
