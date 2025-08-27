@@ -32,6 +32,8 @@
     
     (c) 2025 by: Bob Glicksman, Jim Schrempp, Team Practicle Projects; all rights reserved.
 
+    version 0.9 Pre-release.  The code is fully functional!  It just needs all of the test related
+        stuff removed and the formatting cleaned up.
     version 0.5 Pre-release.  The display of the time for the next scheduled event is not
         correct.  UTC times for the next event for all managed schedules seem to be bumped to
         the next day, event if some of the current day scheduled events have not yet happened.
@@ -45,7 +47,7 @@ SYSTEM_MODE(AUTOMATIC)
 #include <LiquidCrystal.h>
 #include <LocalTimeRK.h>
 
-#define VERSION "0.5"
+#define VERSION "0.9"
 String version = VERSION;
 
  // Pinout Definitions for the RFID PCB
@@ -124,7 +126,7 @@ void setup() {
   MNScheduleManager.getScheduleByName("13")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:30:00"),
-        //LocalTimeHMS("10:30:00"),  // for testing
+        //LocalTimeHMS("14:15:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -132,7 +134,7 @@ void setup() {
     MNScheduleManager.getScheduleByName("14")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:45:00"),
-        //LocalTimeHMS("10:35:00"),  // for testing
+        //LocalTimeHMS("14:20:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -140,15 +142,15 @@ void setup() {
     MNScheduleManager.getScheduleByName("17")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:55:00"),
-        //LocalTimeHMS("10:40:00"),  // for testing
+        //LocalTimeHMS("14:25:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
     // Daily at 10:00 device message 15
     MNScheduleManager.getScheduleByName("15")
     .withTime(LocalTimeHMSRestricted(
-        LocalTimeHMS("22:03:00"),
-        //LocalTimeHMS("10:45:00"),  // for testing
+        LocalTimeHMS("22:00:00"),
+        //LocalTimeHMS("14:30:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -201,6 +203,7 @@ void loop() {
         }
 
         // Get next scheduled event time
+        conv.withCurrentTime().convert();   // XXXX set conv with the current time for next scheduled event
         // XXXX time_t nextTime = schedule.getNextScheduledTime(conv);
         schedule.getNextScheduledTime(conv);    // XXXX this method updated the conv object but returns a bool
         time_t nextTime = conv.time;       // XXXX This appears to convert conv to a time type
