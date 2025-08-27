@@ -1,28 +1,53 @@
 #include "application.h"
 
 /*
-  Hardware Test for Event Timer
+  Event Timer
+    This code is intended to run on a Particle Photon 2 that is plugged into an RFID Station
+    printed circuit board.  This circuit board connects the Photon 2 pins to:
 
-    Basic hardware and time library software test using Photon 2 in the RFID Station hardware.
+    - a 2 line, 16 character per line, 3.3 volt LCD display that is supported by the Arduino
+        LiquidCrystal library.
+    - a green LED identified on the circuit board as "ADMIT"
+    - a red LED identified on the circuit board as "REJECT"
+    - a piezo buzzer identified on the circuit board as "BUZZER"
+    - a green (yellow)  LED identified on the circuit board as "READY"
 
-    When defined for HARDWARE_TEST, this code displays some stuff on the LCD display and blinks the LEDs 
-    in order to demonstrate that the pin mappings are correct.
+    This code uses the "LocalTimeRK" Particle library for both conversions of utc to local
+    time and also to create and manage schedules for firing off events.
 
-    Otherwise, this code sets up the local time and displays the current date and time on the LCD.
+    ** the schedules that are loaded into the library's schedule management instance are the current
+    (as of this date) schedules for closing time announcements at Maker Nexus.  The Event Manager is
+    flexible to the extent that the schedules that are loaded into the schedule manager instance
+    can be modified or replaced as needed.  The modified code is then re-flashed to the device in order
+    for the new functionality to take effect.
 
+    The top line of the LCD displays the current time, adjusted for the timezone and DST.
+    The second line of the LCD displays the time of the next event of all schedules in the schedule
+    manager instance.
+
+    The "ADMIT" LED lights when the current time is DST; unlit if the current time is standard time.
+    The "REJECT" LED lights briefly when a new event is fired off.  The buzzer also beeps briefly 
+    at these times.
+    The "READY" LED lights when the device is initialized and running in loop().
+    
     (c) 2025 by: Bob Glicksman, Jim Schrempp, Team Practicle Projects; all rights reserved.
 
-    version 1.0.  Initial release: 08-25-2025
+    version 0.5 Pre-release.  The display of the time for the next scheduled event is not
+        correct.  UTC times for the next event for all managed schedules seem to be bumped to
+        the next day, event if some of the current day scheduled events have not yet happened.
+        The actually event publication work -- they fire off at the correct times of the correct day.
 
  */
 
-SYSTEM_MODE(AUTOMATIC) // wait for connection to the Internet before running setup()
+SYSTEM_MODE(AUTOMATIC)
 
 #include <Particle.h>
 #include <LiquidCrystal.h>
 #include <LocalTimeRK.h>
 
 #define VERSION "1.0"
+String version = VERSION;
+
  // Pinout Definitions for the RFID PCB
  #define ADMIT_LED D19
  #define REJECT_LED D18
@@ -41,7 +66,7 @@ void logToParticle(String message, int deviceNum, String payload, int SNRhub1, i
         + "|deviceNum=" + String(deviceNum) + "|payload=" + payload 
         + "|SNRhub1=" + String(SNRhub1) + "|RSSIHub1=" + String(RSSIHub1);
 
-    long rtn = Particle.publish("LoRaHubLogging", data, PRIVATE);
+  long rtn = Particle.publish("LoRaHubLogging", data, PRIVATE);
 }
 
 // function to generate a "simulated sensor" received message event to the Particle cloud
@@ -58,7 +83,7 @@ int simulateSensor(String sensorNum) {
 void setup() {
 
     // for debugging only
- //   Serial.begin(9600);
+    Serial.begin(9600);
 
   Particle.variable("version", VERSION);  // make the version available to the Console
 
@@ -75,7 +100,23 @@ void setup() {
   // set up the LCD's number of columns and rows and clear the display
   lcd.begin(16,2);
   lcd.clear();
+
+  // wait for the device to connect to the Internet
+    // put up blanks on the LCD display
+    lcd.setCursor(0,0);
+    lcd.print(" -------------- ");
+    lcd.setCursor(0,1);
+    lcd.print(" -------------- ");  
+
+    // wait for the device to connect to the Internet
+    while(!Particle.connected()) {
+        delay(100);
+    }
+
+  // set up the current time in local time and clear the display
+  lcd.clear();
   lcd.setCursor(0,0);
+
   // set up the local time (Pacific Time)
   LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
 
@@ -83,6 +124,7 @@ void setup() {
   MNScheduleManager.getScheduleByName("13")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:30:00"),
+        //LocalTimeHMS("10:30:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -90,6 +132,7 @@ void setup() {
     MNScheduleManager.getScheduleByName("14")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:45:00"),
+        //LocalTimeHMS("10:35:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -97,6 +140,7 @@ void setup() {
     MNScheduleManager.getScheduleByName("17")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:55:00"),
+        //LocalTimeHMS("10:40:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -104,6 +148,7 @@ void setup() {
     MNScheduleManager.getScheduleByName("15")
     .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("22:03:00"),
+        //LocalTimeHMS("10:45:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -126,7 +171,14 @@ void loop() {
   // display the date and time on the lcd
     LocalTimeConvert conv;
     conv.withCurrentTime().convert();
-    
+
+    // set the DST light
+    if(conv.isDST()) {
+        digitalWrite(ADMIT_LED, HIGH);
+    } else {
+        digitalWrite(ADMIT_LED, LOW);
+    }
+
 //    lcd.clear();
 
     String msg;
@@ -165,13 +217,19 @@ void loop() {
         }
 
         // XXX for debugging only -- does indeed seem to print out the 4 schedules with their times
-//        Serial.print("Schedule: ");
-//      Serial.print(schedule.name);
-//        Serial.print(" Next Time: ");
-//      Serial.println(nextTime);
+        Serial.print("Schedule: ");
+      Serial.print(schedule.name);
+      Serial.print(" Next Time: ");
+      Serial.println(nextTime);
     });
 
     // second line of the display is the time
+
+    // XXX test prints
+    Serial.println();
+    Serial.println(earliestTime);
+    Serial.println();
+
     conv.withTime(earliestTime).convert();
     msg = conv.format("%m-%d %I:%M:%S%p"); // 08-25 10:00:00AM
     lcd.setCursor(0,1);
