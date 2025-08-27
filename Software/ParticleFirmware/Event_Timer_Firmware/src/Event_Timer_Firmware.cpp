@@ -16,6 +16,7 @@
 
  */
 
+SYSTEM_MODE(AUTOMATIC) // wait for connection to the Internet before running setup()
 
 #include <Particle.h>
 #include <LiquidCrystal.h>
@@ -55,6 +56,10 @@ int simulateSensor(String sensorNum) {
 }   // end of simulatedSensor()
 
 void setup() {
+
+    // for debugging only
+    //   Serial.begin(9600);
+
     Particle.variable("version", VERSION);  // make the version available to the Console
 
     pinMode(ADMIT_LED, OUTPUT); 
@@ -97,10 +102,22 @@ void setup() {
 
     // Daily at 10:00 device message 15
     MNScheduleManager.getScheduleByName("15")
-        .withTime(LocalTimeHMSRestricted(
-            LocalTimeHMS("22:03:00"),
-            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-        ));
+    .withTime(LocalTimeHMSRestricted(
+        LocalTimeHMS("22:03:00"),
+        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+    ));
+
+    // indicate that the device is ready
+    digitalWrite(READY_LED, HIGH);
+    digitalWrite(BUZZER, HIGH);
+    delay(100);
+    digitalWrite(BUZZER, LOW);
+    delay(100);
+    digitalWrite(BUZZER, HIGH);
+    delay(100);
+    digitalWrite(BUZZER, LOW);
+
+
 
 } // end of setup()
 
@@ -110,7 +127,7 @@ void loop() {
     LocalTimeConvert conv;
     conv.withCurrentTime().convert();
     
-    lcd.clear();
+//    lcd.clear();
 
     String msg;
     // first line of display is the date
@@ -132,17 +149,30 @@ void loop() {
         }
 
         // Get next scheduled event time
-        time_t nextTime = schedule.getNextScheduledTime(conv);
-        if (nextTime != 0) {
-            if (earliestTime == 0 || nextTime < earliestTime) {
-                earliestTime = nextTime;
-            }
+        // XXXX time_t nextTime = schedule.getNextScheduledTime(conv);
+        schedule.getNextScheduledTime(conv);    // XXXX this method updated the conv object but returns a bool
+        time_t nextTime = conv.time;       // XXXX This appears to convert conv to a time type
+//        if (nextTime != 0) {
+//            if (earliestTime == 0 || nextTime < earliestTime) {
+//                earliestTime = nextTime;
+//            }
+//        }
+
+        if(earliestTime == 0) {
+            earliestTime = nextTime;
+        } else if(nextTime < earliestTime) {
+            earliestTime = nextTime; 
         }
+
+        // XXX for debugging only -- does indeed seem to print out the 4 schedules with their times
+//        Serial.print("Schedule: ");
+//      Serial.print(schedule.name);
+//        Serial.print(" Next Time: ");
+//      Serial.println(nextTime);
     });
 
-
     // second line of the display is the time
-    conv.withTime(earliestTime); //.convert();
+    conv.withTime(earliestTime).convert();
     msg = conv.format("%m-%d %I:%M:%S%p"); // 08-25 10:00:00AM
     lcd.setCursor(0,1);
     lcd.print(msg);
