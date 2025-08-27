@@ -1,6 +1,7 @@
 #include "application.h"
 
 /*
+  jbs
   Event Timer
     This code is intended to run on a Particle Photon 2 that is plugged into an RFID Station
     printed circuit board.  This circuit board connects the Photon 2 pins to:
