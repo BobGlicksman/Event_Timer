@@ -32,6 +32,7 @@
     
     (c) 2025 by: Bob Glicksman, Jim Schrempp, Team Practicle Projects; all rights reserved.
 
+    version 1.00 Initial release.
     version 0.9 Pre-release.  The code is fully functional!  It just needs all of the test related
         stuff removed and the formatting cleaned up.
     version 0.5 Pre-release.  The display of the time for the next scheduled event is not
@@ -47,7 +48,8 @@ SYSTEM_MODE(AUTOMATIC)
 #include <LiquidCrystal.h>
 #include <LocalTimeRK.h>
 
-#define VERSION "0.91"
+#define VERSION "1.00"
+
 // Pinout Definitions for the RFID PCB
 #define ADMIT_LED D19
 #define REJECT_LED D18
@@ -66,43 +68,37 @@ void logToParticle(String message, int deviceNum, String payload, int SNRhub1, i
         + "|deviceNum=" + String(deviceNum) + "|payload=" + payload 
         + "|SNRhub1=" + String(SNRhub1) + "|RSSIHub1=" + String(RSSIHub1);
 
-  long rtn = Particle.publish("LoRaHubLogging", data, PRIVATE);
-}
+    long rtn = Particle.publish("LoRaHubLogging", data, PRIVATE);
+}  // end of LogToParticle()
 
 // function to generate a "simulated sensor" received message event to the Particle cloud
 int simulateSensor(String sensorNum) {
     int _deviceID = sensorNum.toInt();
     String msg = "EventTimer";
-
     logToParticle(msg, _deviceID, "dummyPayload", 0, 0);
 
     return 0;
-
 }   // end of simulatedSensor()
 
 void setup() {
-
-    // for debugging only
-       Serial.begin(9600);
-
     Particle.variable("version", VERSION);  // make the version available to the Console
 
-  pinMode(ADMIT_LED, OUTPUT);
-  pinMode(REJECT_LED, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-  pinMode(READY_LED, OUTPUT);
+    pinMode(ADMIT_LED, OUTPUT);
+    pinMode(REJECT_LED, OUTPUT);
+    pinMode(BUZZER, OUTPUT);
+    pinMode(READY_LED, OUTPUT);
 
-  digitalWrite(ADMIT_LED, LOW);
-  digitalWrite(REJECT_LED, LOW);
-  digitalWrite(BUZZER, LOW);
-  digitalWrite(READY_LED, LOW);
+    digitalWrite(ADMIT_LED, LOW);
+    digitalWrite(REJECT_LED, LOW);
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(READY_LED, LOW);
 
-  // set up the LCD's number of columns and rows and clear the display
-  lcd.begin(16,2);
-  lcd.clear();
+    // set up the LCD's number of columns and rows and clear the display
+    lcd.begin(16,2);
+    lcd.clear();
 
-  // wait for the device to connect to the Internet
-    // put up blanks on the LCD display
+    // wait for the device to connect to the Internet
+    // put up blanks on the LCD display in the meantime
     lcd.setCursor(0,0);
     lcd.print(" -------------- ");
     lcd.setCursor(0,1);
@@ -113,42 +109,42 @@ void setup() {
         delay(100);
     }
 
-  // set up the current time in local time and clear the display
-  lcd.clear();
-  lcd.setCursor(0,0);
+    // set up the current time in local time and clear the display
+    lcd.clear();
+    lcd.setCursor(0,0);
 
-  // set up the local time (Pacific Time)
-  LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
+    // set up the local time (Pacific Time)
+    LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
 
     // Daily at 9:30pm device message 13
-  MNScheduleManager.getScheduleByName("13")
-    .withTime(LocalTimeHMSRestricted(
+    MNScheduleManager.getScheduleByName("13")
+        .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:30:00"),
-        //LocalTimeHMS("14:15:00"),  // for testing
+        //LocalTimeHMS("10:00:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
     // Daily at 9:45 device message 14
     MNScheduleManager.getScheduleByName("14")
-    .withTime(LocalTimeHMSRestricted(
+        .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:45:00"),
-        //LocalTimeHMS("14:20:00"),  // for testing
+        //LocalTimeHMS("10:02:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
    // Daily at 9:55 device message 17
     MNScheduleManager.getScheduleByName("17")
-    .withTime(LocalTimeHMSRestricted(
+        .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("21:55:00"),
-        //LocalTimeHMS("14:25:00"),  // for testing
+        //LocalTimeHMS("10:04:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
     // Daily at 10:00 device message 15
     MNScheduleManager.getScheduleByName("15")
-    .withTime(LocalTimeHMSRestricted(
+        .withTime(LocalTimeHMSRestricted(
         LocalTimeHMS("22:00:00"),
-        //LocalTimeHMS("14:30:00"),  // for testing
+        //LocalTimeHMS("10:06:00"),  // for testing
         LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
     ));
 
@@ -162,24 +158,20 @@ void setup() {
     delay(100);
     digitalWrite(BUZZER, LOW);
 
-
-
 } // end of setup()
 
 void loop() {
   
-  // display the date and time on the lcd
+    // display the date and time on the lcd
     LocalTimeConvert conv;
     conv.withCurrentTime().convert();
 
-    // set the DST light
+    // set the DST indicator LED
     if(conv.isDST()) {
         digitalWrite(ADMIT_LED, HIGH);
     } else {
         digitalWrite(ADMIT_LED, LOW);
     }
-
-//    lcd.clear();
 
     String msg;
     // first line of display is the date
@@ -188,53 +180,36 @@ void loop() {
     lcd.print(msg);
 
     time_t earliestTime = 0;
-    // for each schedule in the schedule manager, check if there is an event
-    // Check each schedule
+    // for each schedule in the schedule manager, check if there is an event for now
     MNScheduleManager.forEach([&](LocalTimeSchedule &schedule) {
         if (schedule.isScheduledTime()) {
             // Publish event if scheduled time
             String temp = schedule.name;
             simulateSensor(temp);
+
+            // flash the indicator LED briefly
             digitalWrite(REJECT_LED, HIGH);
             delay(200);
             digitalWrite(REJECT_LED, LOW);
         }
 
-        // Get next scheduled event time
-        conv.withCurrentTime().convert();   // XXXX set conv with the current time for next scheduled event
-        // XXXX time_t nextTime = schedule.getNextScheduledTime(conv);
-        schedule.getNextScheduledTime(conv);    // XXXX this method updated the conv object but returns a bool
-        time_t nextTime = conv.time;       // XXXX This appears to convert conv to a time type
-//        if (nextTime != 0) {
-//            if (earliestTime == 0 || nextTime < earliestTime) {
-//                earliestTime = nextTime;
-//            }
-//        }
-
+        // Get next scheduled event time for display on the second line of the LCD
+        conv.withCurrentTime().convert();   // set conv with the current time for next scheduled event
+        schedule.getNextScheduledTime(conv);    // update he conv object with the next scheduled time
+        time_t nextTime = conv.time;       // converts conv to a time type
         if(earliestTime == 0) {
             earliestTime = nextTime;
         } else if(nextTime < earliestTime) {
             earliestTime = nextTime; 
         }
-
-        // XXX for debugging only -- does indeed seem to print out the 4 schedules with their times
-        Serial.print("Schedule: ");
-      Serial.print(schedule.name);
-      Serial.print(" Next Time: ");
-      Serial.println(nextTime);
     });
 
     // second line of the display is the time
-
-    // XXX test prints
-    Serial.println();
-    Serial.println(earliestTime);
-    Serial.println();
-
     conv.withTime(earliestTime).convert();
     msg = conv.format("%m-%d %I:%M:%S%p"); // 08-25 10:00:00AM
     lcd.setCursor(0,1);
     lcd.print(msg);
 
-    delay(100);
+    delay(100);     // wait a bit before looping back
+
 } // end of loop()
