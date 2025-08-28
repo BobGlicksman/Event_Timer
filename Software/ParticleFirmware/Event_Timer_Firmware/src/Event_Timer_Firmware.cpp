@@ -1,7 +1,6 @@
 #include "application.h"
 
 /*
-  jbs
   Event Timer
     This code is intended to run on a Particle Photon 2 that is plugged into an RFID Station
     printed circuit board.  This circuit board connects the Photon 2 pins to:
@@ -88,43 +87,62 @@ void setup() {
 
     Particle.variable("version", VERSION);  // make the version available to the Console
 
-    pinMode(ADMIT_LED, OUTPUT); 
-    pinMode(REJECT_LED, OUTPUT);
-    pinMode(BUZZER, OUTPUT);
-    pinMode(READY_LED, OUTPUT);
+  pinMode(ADMIT_LED, OUTPUT);
+  pinMode(REJECT_LED, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(READY_LED, OUTPUT);
 
-    digitalWrite(ADMIT_LED, LOW);  
-    digitalWrite(REJECT_LED, LOW);
-    digitalWrite(BUZZER, LOW);
-    digitalWrite(READY_LED, LOW);
+  digitalWrite(ADMIT_LED, LOW);
+  digitalWrite(REJECT_LED, LOW);
+  digitalWrite(BUZZER, LOW);
+  digitalWrite(READY_LED, LOW);
 
-    // set up the LCD's number of columns and rows and clear the display
-    lcd.begin(16,2);
-    lcd.clear();
+  // set up the LCD's number of columns and rows and clear the display
+  lcd.begin(16,2);
+  lcd.clear();
+
+  // wait for the device to connect to the Internet
+    // put up blanks on the LCD display
     lcd.setCursor(0,0);
-    // set up the local time (Pacific Time)
-    LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
+    lcd.print(" -------------- ");
+    lcd.setCursor(0,1);
+    lcd.print(" -------------- ");  
+
+    // wait for the device to connect to the Internet
+    while(!Particle.connected()) {
+        delay(100);
+    }
+
+  // set up the current time in local time and clear the display
+  lcd.clear();
+  lcd.setCursor(0,0);
+
+  // set up the local time (Pacific Time)
+  LocalTime::instance().withConfig(LocalTimePosixTimezone("PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));
 
     // Daily at 9:30pm device message 13
-    MNScheduleManager.getScheduleByName("13")
-        .withTime(LocalTimeHMSRestricted(
-            LocalTimeHMS("21:30:00"),
-            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-        ));
+  MNScheduleManager.getScheduleByName("13")
+    .withTime(LocalTimeHMSRestricted(
+        LocalTimeHMS("21:30:00"),
+        //LocalTimeHMS("14:15:00"),  // for testing
+        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+    ));
 
     // Daily at 9:45 device message 14
     MNScheduleManager.getScheduleByName("14")
-        .withTime(LocalTimeHMSRestricted(
-            LocalTimeHMS("21:45:00"),
-            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-        ));
+    .withTime(LocalTimeHMSRestricted(
+        LocalTimeHMS("21:45:00"),
+        //LocalTimeHMS("14:20:00"),  // for testing
+        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+    ));
 
-    // Daily at 9:55 device message 17
+   // Daily at 9:55 device message 17
     MNScheduleManager.getScheduleByName("17")
-        .withTime(LocalTimeHMSRestricted(
-            LocalTimeHMS("21:55:00"),
-            LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
-        ));
+    .withTime(LocalTimeHMSRestricted(
+        LocalTimeHMS("21:55:00"),
+        //LocalTimeHMS("14:25:00"),  // for testing
+        LocalTimeRestrictedDate(LocalTimeDayOfWeek::MASK_ALL)
+    ));
 
     // Daily at 10:00 device message 15
     MNScheduleManager.getScheduleByName("15")
