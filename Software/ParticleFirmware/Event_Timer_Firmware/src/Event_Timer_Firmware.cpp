@@ -47,7 +47,7 @@ SYSTEM_MODE(AUTOMATIC)
 #include <LiquidCrystal.h>
 #include <LocalTimeRK.h>
 
-#define VERSION "1.0"
+#define VERSION "0.91"
 // Pinout Definitions for the RFID PCB
 #define ADMIT_LED D19
 #define REJECT_LED D18
@@ -83,7 +83,7 @@ int simulateSensor(String sensorNum) {
 void setup() {
 
     // for debugging only
-    //   Serial.begin(9600);
+       Serial.begin(9600);
 
     Particle.variable("version", VERSION);  // make the version available to the Console
 
