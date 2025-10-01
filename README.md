@@ -43,4 +43,4 @@ Folder containing Fusion 360 CAD files for the Event Timer enclosure.
 - **ParticleFirmware/Event_Timer_Firmware**:  The released Event Timer software.
 
 ### Documentation:
-- **Event_Timer_Software_Manual.pdf**:  Document containing detailes of the Event Timer Software and use of the "LocalTimeRK" library.
+- **Event_Timer_Software_Manual.pdf**:  Document containing detailes of the Event Timer Software and use of the *LocalTimeRK* library.
