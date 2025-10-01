@@ -38,9 +38,13 @@ In addition to publishing events to the Particle Cloud, the Event Timer software
 Folder containing Fusion 360 CAD files for the Event Timer enclosure.
 
 ### Software:
+Folder containing software source code.
+
 - **TestCode/Photon2 test code**:  Legacy source code for development purposes only.  NOT THE RELEASED SOFTWARE.
 
 - **ParticleFirmware/Event_Timer_Firmware**:  The released Event Timer software.
 
 ### Documentation:
+Folder containing relevant documentation.
+
 - **Event_Timer_Software_Manual.pdf**:  Document containing details of the Event Timer Software and use of the *LocalTimeRK* library.
